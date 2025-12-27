@@ -110,6 +110,12 @@ class AdminAPI {
     });
   }
 
+  async clearUserPenalties(userId) {
+    return await this.request(`/admin/users/${userId}/clear-penalties`, {
+      method: 'POST'
+    });
+  }
+
   async uploadUpdate(version, title, description, file, onProgress) {
     const formData = new FormData();
     formData.append('version', version);
