@@ -130,25 +130,16 @@
     document.getElementById('inviteCode').textContent = code.toUpperCase() || '-----';
     
     // Try to open app via deep link
-    document.getElementById('openAppBtn').addEventListener('click', (e) => {
-      e.preventDefault();
-      
-      // Try custom scheme first
-      const appLink = `antimat://invite/${code}`;
-      
-      // Fallback timeout
+    const openAppBtn = document.getElementById('openAppBtn');
+    const appLink = `antimat://invite/${code}`;
+    openAppBtn.setAttribute('href', appLink);
+    openAppBtn.addEventListener('click', (e) => {
+      // If app not installed, fallback after short delay
       const timeout = setTimeout(() => {
-        // App not installed, redirect to download
         window.location.href = '/#download';
-      }, 2000);
-      
-      // Try to open app
-      window.location.href = appLink;
-      
-      // If app opens, clear timeout
-      window.addEventListener('blur', () => {
-        clearTimeout(timeout);
-      });
+      }, 1800);
+      // If app opens, page loses focus -> cancel fallback
+      window.addEventListener('blur', () => clearTimeout(timeout), { once: true });
     });
     
     // Theme
