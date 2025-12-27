@@ -80,7 +80,10 @@ apiApp.use((err, req, res, next) => {
 // ============================================
 
 siteApp.use(requestLogger('SITE'));
-siteApp.use(express.static(path.join(__dirname, '../website')));
+// В продакшене сервер находится в корне рядом с папкой website
+// Поэтому используем путь без подъёма на уровень выше
+const websitePath = path.join(__dirname, 'website');
+siteApp.use(express.static(websitePath));
 
 // Маршрут для скачивания APK файла
 siteApp.get('/download/app-release.apk', async (req, res) => {
@@ -122,22 +125,22 @@ siteApp.get('/download/app-release.apk', async (req, res) => {
 siteApp.get('/invite/:code', (req, res) => {
   const { code } = req.params;
   // Можно редиректить на app scheme или показать страницу
-  res.sendFile(path.join(__dirname, '../website/invite.html'));
+  res.sendFile(path.join(websitePath, 'invite.html'));
 });
 
 // Админ-панель
 siteApp.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '../website/admin.html'));
+  res.sendFile(path.join(websitePath, 'admin.html'));
 });
 
 // Dashboard без .html
 siteApp.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, '../website/dashboard.html'));
+  res.sendFile(path.join(websitePath, 'dashboard.html'));
 });
 
 // SPA fallback
 siteApp.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../website/index.html'));
+  res.sendFile(path.join(websitePath, 'index.html'));
 });
 
 // ============================================
