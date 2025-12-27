@@ -8,7 +8,6 @@ class AdminAPI {
   constructor() {
     this.token = localStorage.getItem('admin-token');
   }
-
   setToken(token) {
     this.token = token;
     if (token) {
@@ -275,6 +274,12 @@ function setupEventListeners() {
     // Проверяем кнопку удаления подписки
     if (e.target.id === 'removePremiumBtn' || e.target.closest('#removePremiumBtn')) {
       removePremiumFromUser();
+      return;
+    }
+
+    // Очистка штрафов/долгов
+    if (e.target.id === 'clearPenaltiesBtn' || e.target.closest('#clearPenaltiesBtn')) {
+      clearPenaltiesForUser();
       return;
     }
 
@@ -603,6 +608,26 @@ async function deleteCurrentUser() {
     }
   } catch (error) {
     alert('Ошибка удаления: ' + error.message);
+  }
+}
+
+async function clearPenaltiesForUser() {
+  if (!currentUserId) return;
+
+  if (!confirm('Очистить все штрафы, долги и историю для этого пользователя?')) {
+    return;
+  }
+
+  try {
+    const result = await adminAPI.clearUserPenalties(currentUserId);
+    if (result.success) {
+      alert('Штрафы и долги очищены.');
+      closeUserActions();
+      loadUsers(currentUserPage);
+      loadStats();
+    }
+  } catch (error) {
+    alert('Ошибка очистки: ' + error.message);
   }
 }
 
