@@ -75,14 +75,14 @@ apiApp.use((err, req, res, next) => {
   });
 });
 
-// Проксируем API на сайт-приложение, чтобы /api работало на том же домене
-siteApp.use('/api', apiApp);
-
 // ============================================
 // Static Site Server Configuration
 // ============================================
 
 siteApp.use(requestLogger('SITE'));
+// Проксируем /api на apiApp ДО статики/фолбэков
+siteApp.use('/api', apiApp);
+
 // В продакшене сервер находится в корне рядом с папкой website
 // Поэтому используем путь без подъёма на уровень выше
 const websitePath = path.join(__dirname, 'website');
