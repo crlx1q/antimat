@@ -80,8 +80,28 @@ apiApp.use((err, req, res, next) => {
 // ============================================
 
 siteApp.use(requestLogger('SITE'));
-// Проксируем /api на apiApp ДО статики/фолбэков
-siteApp.use('/api', apiApp);
+// Поддержка API и на SITE_PORT: повторяем базовые middlewares/маршруты
+siteApp.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+siteApp.use(express.json());
+siteApp.use('/api/auth', authRoutes);
+siteApp.use('/api/user', userRoutes);
+siteApp.use('/api/words', wordsRoutes);
+siteApp.use('/api/penalties', penaltiesRoutes);
+siteApp.use('/api/groups', groupsRoutes);
+siteApp.use('/api/admin', adminRoutes);
+siteApp.use('/api/updates', updatesRoutes);
+siteApp.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'ok',
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // В продакшене сервер находится в корне рядом с папкой website
 // Поэтому используем путь без подъёма на уровень выше
