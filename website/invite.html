@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Приглашение в группу — Antimat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .invite-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: var(--bg-primary);
+    }
+    
+    .invite-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 48px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    .invite-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+    }
+    
+    .invite-title {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    
+    .invite-subtitle {
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+    }
+    
+    .invite-code {
+      background: var(--bg-tertiary);
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+    
+    .invite-code-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+    
+    .invite-code-value {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+    }
+    
+    .invite-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .invite-info {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    
+    .invite-info a {
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="invite-page">
+    <div class="invite-card">
+      <div class="invite-logo">
+        <img src="logotip.png" alt="Antimat Logo" class="logo-img" style="width: 100%; height: 100%; object-fit: contain;">
+      </div>
+      
+      <h1 class="invite-title">ANTIMAT</h1>
+      <p class="invite-subtitle">Вас пригласили в группу</p>
+      
+      <div class="invite-code">
+        <div class="invite-code-label">Код приглашения</div>
+        <div class="invite-code-value" id="inviteCode">-----</div>
+      </div>
+      
+      <div class="invite-actions">
+        <a href="#" class="btn btn-primary btn-lg" id="openAppBtn">
+          Открыть в приложении
+        </a>
+        <a href="/" class="btn btn-outline">
+          Скачать Antimat
+        </a>
+      </div>
+      
+      <div class="invite-info">
+        <p>Скопируйте код и введите его в приложении в разделе «Группы» → «Присоединиться»</p>
+        <p style="margin-top: 12px;">
+          Нет приложения? <a href="/#download">Скачать</a>
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Get invite code from URL
+    const path = window.location.pathname;
+    const code = path.split('/invite/')[1] || '';
+    
+    document.getElementById('inviteCode').textContent = code.toUpperCase() || '-----';
+    
+    // Try to open app via deep link
+    document.getElementById('openAppBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      // Try custom scheme first
+      const appLink = `antimat://invite/${code}`;
+      
+      // Fallback timeout
+      const timeout = setTimeout(() => {
+        // App not installed, redirect to download
+        window.location.href = '/#download';
+      }, 2000);
+      
+      // Try to open app
+      window.location.href = appLink;
+      
+      // If app opens, clear timeout
+      window.addEventListener('blur', () => {
+        clearTimeout(timeout);
+      });
+    });
+    
+    // Theme
+    const savedTheme = localStorage.getItem('antimat-theme');
+    if (savedTheme) {
+      document.body.className = savedTheme;
+    }
+  </script>
+</body>
+</html>
+
