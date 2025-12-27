@@ -279,6 +279,39 @@ router.delete('/users/:id/premium', adminAuth, async (req, res) => {
   }
 });
 
+// POST /api/admin/users/:id/clear-penalties - Очистка штрафов/долга пользователя
+router.post('/users/:id/clear-penalties', adminAuth, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Пользователь не найден'
+      });
+    }
+
+    // Удаляем все штрафы пользователя
+    await Penalty.deleteMany({ user: userId });
+
+    // Сбрасываем долг
+    user.totalDebt = 0;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Все штрафы и долги очищены'
+    });
+  } catch (error) {
+    console.error('Clear penalties error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка при очистке штрафов'
+    });
+  }
+});
+
 // DELETE /api/admin/users/:id - Полное удаление аккаунта
 router.delete('/users/:id', adminAuth, async (req, res) => {
   try {
