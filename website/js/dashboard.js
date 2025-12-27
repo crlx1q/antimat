@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initWords();
   initSettings();
   initGroups();
+  initMobileNav();
 });
 
 // ============================================
@@ -61,6 +62,23 @@ function initAuth() {
   // Logout buttons
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.getElementById('logoutBtnSettings').addEventListener('click', logout);
+}
+
+function initMobileNav() {
+  const burger = document.getElementById('dashBurger');
+  const sidebar = document.querySelector('.sidebar');
+  if (!burger || !sidebar) return;
+
+  const closeSidebar = () => sidebar.classList.remove('open');
+
+  burger.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+  });
+
+  // Закрывать при клике по пунктам меню
+  sidebar.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', closeSidebar);
+  });
 }
 
 function updateAuthMode() {
