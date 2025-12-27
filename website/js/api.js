@@ -2,8 +2,8 @@
 // ANTIMAT - API Client
 // ============================================
 
-// Бьем в прод API на домене (предполагается прокси /api -> API_PORT)
-const API_BASE = 'https://antimat.reflexai.pro/api';
+// Бьем в /api на том же домене (прокси/сервер сами отправят на API)
+const API_BASE = '/api';
 
 class AntimatAPI {
   constructor() {
