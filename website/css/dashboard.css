@@ -155,7 +155,7 @@
 
 /* Mobile header */
 .dash-header {
-  display: flex;
+  display: none;
   position: sticky;
   top: 0;
   z-index: 110;
@@ -198,29 +198,13 @@
   background: var(--bg-tertiary);
 }
 
-.dash-user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-right: 12px;
-}
-
-.dash-user-meta .user-name {
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.dash-user-meta .user-debt {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
 /* Sidebar */
 .sidebar {
   background: var(--bg-secondary);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   position: fixed;
   left: 0;
   top: 0;
@@ -240,6 +224,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow-y: auto;
 }
 
 .nav-item {
@@ -277,6 +262,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-top: auto;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-secondary);
 }
 
 .user-info {
