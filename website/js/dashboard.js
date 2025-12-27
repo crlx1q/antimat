@@ -62,6 +62,8 @@ function initAuth() {
   // Logout buttons
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.getElementById('logoutBtnSettings').addEventListener('click', logout);
+  const logoutHeader = document.getElementById('logoutBtnHeader');
+  if (logoutHeader) logoutHeader.addEventListener('click', logout);
 }
 
 function initMobileNav() {
@@ -174,6 +176,13 @@ function updateUserUI() {
   document.getElementById('userName').textContent = currentUser.name;
   document.getElementById('userDebt').textContent = currentUser.totalDebt.toLocaleString();
   document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+  // header mini-user
+  const hName = document.getElementById('headerUserName');
+  const hDebt = document.getElementById('headerUserDebt');
+  const hAvatar = document.getElementById('headerUserAvatar');
+  if (hName) hName.textContent = currentUser.name;
+  if (hDebt) hDebt.textContent = currentUser.totalDebt.toLocaleString();
+  if (hAvatar) hAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
   document.getElementById('userEmail').textContent = currentUser.email;
   document.getElementById('penaltyAmount').value = currentUser.penaltyAmount;
   document.getElementById('soundEnabled').checked = currentUser.settings?.soundEnabled ?? true;
