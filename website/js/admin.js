@@ -2,7 +2,7 @@
 // ANTIMAT - Admin Panel
 // ============================================
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = '/api';
 
 class AdminAPI {
   constructor() {
@@ -110,7 +110,7 @@ class AdminAPI {
     });
   }
 
-  async uploadUpdate(version, title, description, file) {
+  async uploadUpdate(version, title, description, file, onProgress) {
     const formData = new FormData();
     formData.append('version', version);
     formData.append('title', title || '');
@@ -123,19 +123,33 @@ class AdminAPI {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: headers,
-      body: formData
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);
+      Object.entries(headers).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable && typeof onProgress === 'function') {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress(percent);
+        }
+      };
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === 4) {
+          try {
+            const data = JSON.parse(xhr.responseText || '{}');
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve(data);
+            } else {
+              reject(new Error(data.message || 'Ошибка загрузки'));
+            }
+          } catch (e) {
+            reject(new Error('Ошибка обработки ответа'));
+          }
+        }
+      };
+      xhr.onerror = () => reject(new Error('Ошибка сети'));
+      xhr.send(formData);
     });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.message || 'Ошибка загрузки');
-    }
-    
-    return data;
   }
 
   logout() {
@@ -669,6 +683,8 @@ async function handleUploadUpdate(e) {
   const title = document.getElementById('updateTitle').value;
   const description = document.getElementById('updateDescription').value;
   const file = document.getElementById('updateFile').files[0];
+  const progressBar = document.getElementById('uploadProgress');
+  const progressText = document.getElementById('uploadProgressText');
   
   if (!file) {
     alert('Выберите APK файл');
@@ -679,9 +695,19 @@ async function handleUploadUpdate(e) {
   const originalText = submitBtn.textContent;
   submitBtn.disabled = true;
   submitBtn.textContent = 'Загрузка...';
+  if (progressBar) {
+    progressBar.style.display = 'block';
+    progressBar.value = 0;
+  }
+  if (progressText) {
+    progressText.textContent = '0%';
+  }
   
   try {
-    const result = await adminAPI.uploadUpdate(version, title, description, file);
+    const result = await adminAPI.uploadUpdate(version, title, description, file, (p) => {
+      if (progressBar) progressBar.value = p;
+      if (progressText) progressText.textContent = `${p}%`;
+    });
     
     if (result.success) {
       alert('Обновление успешно загружено!');
@@ -693,6 +719,7 @@ async function handleUploadUpdate(e) {
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = originalText;
+    // keep final progress
   }
 }
 
