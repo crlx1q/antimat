@@ -155,7 +155,7 @@
 
 /* Mobile header */
 .dash-header {
-  display: none;
+  display: flex;
   position: sticky;
   top: 0;
   z-index: 110;
@@ -196,6 +196,23 @@
 .dash-header-actions .theme-toggle {
   border: 1px solid var(--border);
   background: var(--bg-tertiary);
+}
+
+.dash-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 12px;
+}
+
+.dash-user-meta .user-name {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.dash-user-meta .user-debt {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 /* Sidebar */
