@@ -34,7 +34,12 @@ router.put('/push-token', auth, async (req, res) => {
 router.put('/ping', auth, async (req, res) => {
   try {
     const { recording } = req.body;
-    // recording optional; defaults to current user flag
+
+    const userBefore = await User.findById(req.userId);
+    if (!userBefore) return res.status(404).json({ success: false });
+
+    // Explicitly check for state transition
+    const isChangingRecording = typeof recording === 'boolean' && userBefore.isRecording !== recording;
 
     const user = await User.findByIdAndUpdate(
       req.userId,
@@ -45,11 +50,15 @@ router.put('/ping', auth, async (req, res) => {
       { new: true }
     ).populate('groups', '_id');
 
-    // Send presence push only if recording flag is explicitly provided (state change)
-    if (typeof recording === 'boolean' && user?.groups?.length) {
-      const { sendPresencePush } = require('../utils/fcm');
+    const { computeUserStatus, sendPresencePush } = require('../utils/fcm');
+    const statusAfter = computeUserStatus(user);
+
+    // Push ONLY if we explicitly changed recording state OR if user was offline and is now online
+    const wasOffline = !userBefore.lastSeen || (Date.now() - userBefore.lastSeen.getTime() > 90000);
+    
+    if ((isChangingRecording || wasOffline) && user?.groups?.length) {
       for (const group of user.groups) {
-        await sendPresencePush(group._id.toString(), req.userId, recording);
+        await sendPresencePush(group._id.toString(), req.userId, user.isRecording);
       }
     }
 
