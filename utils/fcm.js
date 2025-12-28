@@ -100,17 +100,13 @@ async function sendPresencePush(groupId, userId, isRecording) {
 
 function computeUserStatus(user, overrideRecording = null) {
   const ONLINE_THRESHOLD_MS = 120000; // 2 minutes
-  const recording = overrideRecording !== null ? overrideRecording : user.isRecording;
-  
-  if (recording) return 'recording';
-  
   const now = Date.now();
   const lastSeenTime = user.lastSeen ? user.lastSeen.getTime() : 0;
+  const isRecent = now - lastSeenTime < ONLINE_THRESHOLD_MS;
+  const recording = overrideRecording !== null ? overrideRecording : user.isRecording;
   
-  if (now - lastSeenTime < ONLINE_THRESHOLD_MS) {
-    return 'online';
-  }
-  
+  if (recording && isRecent) return 'recording';
+  if (isRecent) return 'online';
   return 'offline';
 }
 
