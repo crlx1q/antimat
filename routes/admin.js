@@ -9,47 +9,12 @@ const Penalty = require('../models/Penalty');
 const ChatMessage = require('../models/ChatMessage');
 const Update = require('../models/Update');
 const { adminAuth, generateAdminToken } = require('../middleware/adminAuth');
-const admin = require('firebase-admin');
-
-// Initialize Firebase Admin with env vars (service account fields provided as individual envs)
-if (!admin.apps.length) {
-  const {
-    project_id,
-    client_email,
-    private_key,
-    private_key_id,
-    client_id,
-    auth_uri,
-    token_uri,
-    auth_provider_x509_cert_url,
-    client_x509_cert_url,
-    universe_domain,
-  } = process.env;
-
-  if (project_id && client_email && private_key) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: project_id,
-        clientEmail: client_email,
-        privateKey: private_key.replace(/\\n/g, '\n'),
-        privateKeyId: private_key_id,
-        clientId: client_id,
-        authUri: auth_uri,
-        tokenUri: token_uri,
-        authProviderX509CertUrl: auth_provider_x509_cert_url,
-        clientX509CertUrl: client_x509_cert_url,
-        universeDomain: universe_domain,
-      }),
-    });
-  } else {
-    console.warn('[FCM] Service account env vars are missing; push test will be disabled');
-  }
-}
+const { isFcmReady, sendPushToTokens } = require('../utils/fcm');
 
 // POST /api/admin/push/test - Send test push to all users with fcmToken
 router.post('/push/test', adminAuth, async (req, res) => {
   try {
-    if (!admin.apps.length) {
+    if (!isFcmReady()) {
       return res.status(500).json({
         success: false,
         message: 'FCM не инициализирован. Проверьте сервисные env переменные.',
@@ -65,13 +30,11 @@ router.post('/push/test', adminAuth, async (req, res) => {
       return res.json({ success: false, message: 'Нет доступных FCM токенов' });
     }
 
-    const message = {
-      notification: { title, body },
-      data: { type: 'test', ts: Date.now().toString() },
+    const result = await sendPushToTokens(
       tokens,
-    };
-
-    const result = await admin.messaging().sendEachForMulticast(message);
+      { title, body },
+      { type: 'test', ts: Date.now().toString() }
+    );
 
     res.json({
       success: true,
