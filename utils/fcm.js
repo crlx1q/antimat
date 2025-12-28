@@ -99,7 +99,7 @@ async function sendPresencePush(groupId, userId, isRecording) {
 }
 
 function computeUserStatus(user, overrideRecording = null) {
-  const ONLINE_THRESHOLD_MS = 120000; // 2 minutes
+  const ONLINE_THRESHOLD_MS = 90000; // 90 seconds
   const now = Date.now();
   const lastSeenTime = user.lastSeen ? user.lastSeen.getTime() : 0;
   const isRecent = now - lastSeenTime < ONLINE_THRESHOLD_MS;
