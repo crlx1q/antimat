@@ -4,6 +4,7 @@ const Penalty = require('../models/Penalty');
 const User = require('../models/User');
 const Group = require('../models/Group');
 const ChatMessage = require('../models/ChatMessage');
+const { sendPushToTokens, isFcmReady } = require('../utils/fcm');
 const { auth } = require('../middleware/auth');
 
 // POST /api/penalties/add - Добавить штраф
@@ -41,7 +42,7 @@ router.post('/add', auth, async (req, res) => {
     // Отправляем уведомление во ВСЕ группы пользователя
     const userGroups = await Group.find({ 'members.user': req.userId });
     for (const group of userGroups) {
-      await ChatMessage.createPenaltyMessage(
+      const penaltyMsg = await ChatMessage.createPenaltyMessage(
         group._id,
         req.userId,
         user.name,
@@ -49,6 +50,42 @@ router.post('/add', auth, async (req, res) => {
         user.penaltyAmount,
         penalty._id
       );
+
+      // Push уведомление участникам группы (кроме нарушителя)
+      if (isFcmReady()) {
+        try {
+          const memberIds = group.members.map((m) => m.user.toString());
+          const targetIds = memberIds.filter((id) => id !== req.userId.toString());
+          if (targetIds.length) {
+            const users = await User.find({
+              _id: { $in: targetIds },
+              fcmToken: { $exists: true, $ne: null },
+            }).select('fcmToken');
+            const tokens = users.map((u) => u.fcmToken).filter(Boolean);
+            if (tokens.length) {
+              await sendPushToTokens(
+                tokens,
+                {
+                  title: group.name,
+                  body: `${user.name}: штраф +${user.penaltyAmount}₸`,
+                },
+                {
+                  type: 'penalty',
+                  groupId: group._id.toString(),
+                  groupName: group.name,
+                  senderName: user.name,
+                  messageId: penaltyMsg._id.toString(),
+                  text: penaltyMsg.text,
+                  penaltyAmount: user.penaltyAmount.toString(),
+                  createdAt: penaltyMsg.createdAt.toISOString(),
+                }
+              );
+            }
+          }
+        } catch (pushErr) {
+          console.warn('Send penalty push error', pushErr?.message || pushErr);
+        }
+      }
     }
     
     res.status(201).json({
