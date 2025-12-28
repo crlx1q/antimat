@@ -12,38 +12,15 @@ router.get('/', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId).populate({
       path: 'groups',
-      populate: [
-        {
-          path: 'owner',
-          select: 'name avatar totalDebt isPremium premiumExpiresAt status lastSeen isRecording'
-        },
-        {
-          path: 'members.user',
-          select: 'name avatar totalDebt isPremium premiumExpiresAt status lastSeen isRecording'
-        }
-      ]
-    });
-    
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'Пользователь не найден' });
-    }
-
-    const groupsWithStatus = user.groups.map(group => {
-      const g = group.toObject();
-      if (g.members) {
-        g.members = g.members.map(m => {
-          if (m.user) {
-            m.user.status = computeUserStatus(m.user);
-          }
-          return m;
-        });
+      populate: {
+        path: 'members.user',
+        select: 'name avatar'
       }
-      return g;
     });
     
     res.json({
       success: true,
-      data: { groups: groupsWithStatus }
+      data: { groups: user.groups }
     });
   } catch (error) {
     console.error('Get groups error:', error);

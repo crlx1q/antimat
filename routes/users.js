@@ -39,10 +39,7 @@ router.put('/ping', auth, async (req, res) => {
     if (user?.groups?.length) {
       const { sendPresencePush } = require('../utils/fcm');
       for (const group of user.groups) {
-        await sendPresencePush(group._id.toString(), req.userId, {
-          recordingOverride: false,
-          lastSeenOverride: new Date(),
-        });
+        await sendPresencePush(group._id.toString(), req.userId, false);
       }
     }
     res.json({ success: true });
@@ -75,10 +72,7 @@ router.put('/presence', auth, async (req, res) => {
     const { sendPresencePush } = require('../utils/fcm');
     if (user.groups && user.groups.length > 0) {
       for (const group of user.groups) {
-        await sendPresencePush(group._id.toString(), req.userId, {
-          recordingOverride: recording,
-          lastSeenOverride: new Date(),
-        });
+        await sendPresencePush(group._id.toString(), req.userId, recording);
       }
     }
 
