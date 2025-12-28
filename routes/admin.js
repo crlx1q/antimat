@@ -9,6 +9,90 @@ const Penalty = require('../models/Penalty');
 const ChatMessage = require('../models/ChatMessage');
 const Update = require('../models/Update');
 const { adminAuth, generateAdminToken } = require('../middleware/adminAuth');
+const admin = require('firebase-admin');
+
+// Initialize Firebase Admin with env vars (service account fields provided as individual envs)
+if (!admin.apps.length) {
+  const {
+    project_id,
+    client_email,
+    private_key,
+    private_key_id,
+    client_id,
+    auth_uri,
+    token_uri,
+    auth_provider_x509_cert_url,
+    client_x509_cert_url,
+    universe_domain,
+  } = process.env;
+
+  if (project_id && client_email && private_key) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: project_id,
+        clientEmail: client_email,
+        privateKey: private_key.replace(/\\n/g, '\n'),
+        privateKeyId: private_key_id,
+        clientId: client_id,
+        authUri: auth_uri,
+        tokenUri: token_uri,
+        authProviderX509CertUrl: auth_provider_x509_cert_url,
+        clientX509CertUrl: client_x509_cert_url,
+        universeDomain: universe_domain,
+      }),
+    });
+  } else {
+    console.warn('[FCM] Service account env vars are missing; push test will be disabled');
+  }
+}
+
+// POST /api/admin/push/test - Send test push to all users with fcmToken
+router.post('/push/test', adminAuth, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(500).json({
+        success: false,
+        message: 'FCM не инициализирован. Проверьте сервисные env переменные.',
+      });
+    }
+
+    const { title = 'Antimat', body = 'Тестовое уведомление' } = req.body || {};
+
+    const users = await User.find({ fcmToken: { $exists: true, $ne: null } }).select('fcmToken');
+    const tokens = users.map((u) => u.fcmToken).filter(Boolean);
+
+    if (!tokens.length) {
+      return res.json({ success: false, message: 'Нет доступных FCM токенов' });
+    }
+
+    const message = {
+      notification: { title, body },
+      data: { type: 'test', ts: Date.now().toString() },
+      tokens,
+    };
+
+    const result = await admin.messaging().sendEachForMulticast(message);
+
+    res.json({
+      success: true,
+      data: {
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+        responses: result.responses.map((r) => ({
+          success: r.success,
+          error: r.error ? r.error.message : null,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error('Send test push error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка отправки тестового пуша',
+      error: error.message,
+    });
+  }
+});
 
 // Создаём папку для загрузок, если её нет
 const uploadsDir = path.join(__dirname, '../uploads/apk');
