@@ -64,4 +64,54 @@ async function sendPushToTokens(tokens, notification = {}, data = {}) {
   return messaging.sendEachForMulticast(message);
 }
 
-module.exports = { getMessaging, isFcmReady, sendPushToTokens };
+async function sendPresencePush(groupId, userId, isRecording) {
+  try {
+    const Group = require('../models/Group');
+    const User = require('../models/User');
+
+    const group = await Group.findById(groupId).populate('members.user', 'fcmToken');
+    if (!group) return;
+
+    // Compute status
+    const user = await User.findById(userId);
+    if (!user) return;
+
+    const status = computeUserStatus(user, isRecording);
+
+    // Get tokens of all members except the user who triggered the change
+    const tokens = group.members
+      .filter(m => m.user && m.user._id.toString() !== userId && m.user.fcmToken)
+      .map(m => m.user.fcmToken);
+
+    if (tokens.length === 0) return;
+
+    await sendPushToTokens(tokens, {}, {
+      type: 'presence',
+      groupId: groupId,
+      userId: userId,
+      status: status,
+    });
+
+    console.log(`[FCM] Sent presence push: user=${userId}, status=${status}, group=${groupId}`);
+  } catch (error) {
+    console.error('[FCM] sendPresencePush error:', error);
+  }
+}
+
+function computeUserStatus(user, overrideRecording = null) {
+  const ONLINE_THRESHOLD_MS = 120000; // 2 minutes
+  const recording = overrideRecording !== null ? overrideRecording : user.isRecording;
+  
+  if (recording) return 'recording';
+  
+  const now = Date.now();
+  const lastSeenTime = user.lastSeen ? user.lastSeen.getTime() : 0;
+  
+  if (now - lastSeenTime < ONLINE_THRESHOLD_MS) {
+    return 'online';
+  }
+  
+  return 'offline';
+}
+
+module.exports = { getMessaging, isFcmReady, sendPushToTokens, sendPresencePush, computeUserStatus };
