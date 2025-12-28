@@ -4,6 +4,7 @@ const Group = require('../models/Group');
 const User = require('../models/User');
 const Penalty = require('../models/Penalty');
 const ChatMessage = require('../models/ChatMessage');
+const { sendPushToTokens, isFcmReady } = require('../utils/fcm');
 const { auth } = require('../middleware/auth');
 
 // GET /api/groups - Получить группы пользователя
@@ -442,6 +443,41 @@ router.post('/:id/chat', auth, async (req, res) => {
     
     await message.populate('sender', 'name avatar');
     
+    // Push to group members (except sender)
+    if (isFcmReady()) {
+      try {
+        const memberIds = group.members.map((m) => m.user.toString());
+        const targetIds = memberIds.filter((id) => id !== req.userId.toString());
+        if (targetIds.length) {
+          const users = await User.find({
+            _id: { $in: targetIds },
+            fcmToken: { $exists: true, $ne: null },
+          }).select('fcmToken');
+          const tokens = users.map((u) => u.fcmToken).filter(Boolean);
+          if (tokens.length) {
+            await sendPushToTokens(
+              tokens,
+              {
+                title: group.name,
+                body: `${message.sender?.name || 'Участник'}: ${message.text}`,
+              },
+              {
+                type: 'chat_message',
+                groupId: group._id.toString(),
+                groupName: group.name,
+                senderName: message.sender?.name || '',
+                messageId: message._id.toString(),
+                text: message.text,
+                createdAt: message.createdAt.toISOString(),
+              }
+            );
+          }
+        }
+      } catch (pushErr) {
+        console.warn('Send chat push error', pushErr?.message || pushErr);
+      }
+    }
+
     res.status(201).json({
       success: true,
       data: { message }
