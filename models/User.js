@@ -76,6 +76,11 @@ const userSchema = new mongoose.Schema({
     soundEnabled: { type: Boolean, default: true },
     notificationsEnabled: { type: Boolean, default: true }
   },
+  // FCM push token
+  fcmToken: {
+    type: String,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now
