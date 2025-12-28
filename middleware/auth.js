@@ -33,8 +33,10 @@ const auth = async (req, res, next) => {
     }
     
     // Обновляем время последней активности
-    user.lastActiveAt = new Date();
-    await user.save();
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { lastActiveAt: new Date() } }
+    );
     
     req.user = user;
     req.userId = user._id;
