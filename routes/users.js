@@ -34,9 +34,9 @@ router.put('/push-token', auth, async (req, res) => {
 router.put('/ping', auth, async (req, res) => {
   try {
     // lastSeen уже обновлен в auth middleware
-    // Отправим presence push в группы, чтобы другие увидели online
+    // Если сейчас запись активна, не затираем статус на "online"
     const user = await User.findById(req.userId).populate('groups', '_id');
-    if (user?.groups?.length) {
+    if (user?.groups?.length && !user.isRecording) {
       const { sendPresencePush } = require('../utils/fcm');
       for (const group of user.groups) {
         await sendPresencePush(group._id.toString(), req.userId, false);
