@@ -64,7 +64,7 @@ async function sendPushToTokens(tokens, notification = {}, data = {}) {
   return messaging.sendEachForMulticast(message);
 }
 
-async function sendPresencePush(groupId, userId, options = {}) {
+async function sendPresencePush(groupId, userId, isRecording) {
   try {
     const Group = require('../models/Group');
     const User = require('../models/User');
@@ -76,10 +76,7 @@ async function sendPresencePush(groupId, userId, options = {}) {
     const user = await User.findById(userId);
     if (!user) return;
 
-    const status = computeUserStatus(user, {
-      recordingOverride: options.recordingOverride ?? null,
-      lastSeenOverride: options.lastSeenOverride ?? null,
-    });
+    const status = computeUserStatus(user, isRecording);
 
     // Get tokens of all members except the user who triggered the change
     const tokens = group.members
@@ -101,14 +98,12 @@ async function sendPresencePush(groupId, userId, options = {}) {
   }
 }
 
-function computeUserStatus(user, { recordingOverride = null, lastSeenOverride = null } = {}) {
+function computeUserStatus(user, overrideRecording = null) {
   const ONLINE_THRESHOLD_MS = 120000; // 2 minutes
   const now = Date.now();
-  const lastSeenTime = lastSeenOverride
-    ? new Date(lastSeenOverride).getTime()
-    : (user.lastSeen ? user.lastSeen.getTime() : 0);
+  const lastSeenTime = user.lastSeen ? user.lastSeen.getTime() : 0;
   const isRecent = now - lastSeenTime < ONLINE_THRESHOLD_MS;
-  const recording = recordingOverride !== null ? recordingOverride : user.isRecording;
+  const recording = overrideRecording !== null ? overrideRecording : user.isRecording;
   
   if (recording && isRecent) return 'recording';
   if (isRecent) return 'online';
