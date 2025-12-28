@@ -72,6 +72,13 @@ class AdminAPI {
     return await this.request('/admin/stats');
   }
 
+  async sendTestPush(title = 'Antimat', body = 'Тестовое уведомление') {
+    return await this.request('/admin/push/test', {
+      method: 'POST',
+      body: JSON.stringify({ title, body })
+    });
+  }
+
   async getUsers(page = 1, limit = 50, search = '') {
     let url = `/admin/users?page=${page}&limit=${limit}`;
     if (search) {
@@ -159,6 +166,19 @@ class AdminAPI {
 
   logout() {
     this.setToken(null);
+  }
+}
+
+// ============================================
+// Test Push
+// ============================================
+
+async function handleSendTestPush() {
+  try {
+    const result = await adminAPI.sendTestPush();
+    alert(`Пуш отправлен. Успехов: ${result.data?.successCount ?? 0}, ошибок: ${result.data?.failureCount ?? 0}`);
+  } catch (e) {
+    alert(`Ошибка отправки: ${e.message}`);
   }
 }
 
@@ -299,6 +319,12 @@ function setupEventListeners() {
       }
     }
   });
+
+  // Test push button
+  const sendTestPushBtn = document.getElementById('sendTestPushBtn');
+  if (sendTestPushBtn) {
+    sendTestPushBtn.addEventListener('click', handleSendTestPush);
+  }
 }
 
 // ============================================
