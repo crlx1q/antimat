@@ -30,6 +30,44 @@ router.put('/push-token', auth, async (req, res) => {
   }
 });
 
+// PUT /api/user/presence - обновить статус присутствия (recording/online)
+router.put('/presence', auth, async (req, res) => {
+  try {
+    const { recording } = req.body;
+    if (typeof recording !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'recording (boolean) is required'
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { 
+        isRecording: recording,
+        lastSeen: new Date()
+      },
+      { new: true }
+    ).populate('groups', '_id');
+
+    // Send presence push to all groups
+    const { sendPresencePush } = require('../utils/fcm');
+    if (user.groups && user.groups.length > 0) {
+      for (const group of user.groups) {
+        await sendPresencePush(group._id.toString(), req.userId, recording);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update presence error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка обновления статуса присутствия'
+    });
+  }
+});
+
 // GET /api/user/profile - Получить профиль
 router.get('/profile', auth, async (req, res) => {
   try {

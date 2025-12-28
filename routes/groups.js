@@ -4,7 +4,7 @@ const Group = require('../models/Group');
 const User = require('../models/User');
 const Penalty = require('../models/Penalty');
 const ChatMessage = require('../models/ChatMessage');
-const { sendPushToTokens, isFcmReady } = require('../utils/fcm');
+const { sendPushToTokens, isFcmReady, computeUserStatus } = require('../utils/fcm');
 const { auth } = require('../middleware/auth');
 
 // GET /api/groups - Получить группы пользователя
@@ -189,7 +189,7 @@ router.get('/:id', auth, async (req, res) => {
     const group = await Group.findById(req.params.id)
       .populate('owner', 'name avatar isPremium premiumExpiresAt totalDebt')
       .populate('admins', 'name avatar isPremium premiumExpiresAt totalDebt')
-      .populate('members.user', 'name avatar totalDebt isPremium premiumExpiresAt');
+      .populate('members.user', 'name avatar totalDebt isPremium premiumExpiresAt isRecording lastSeen');
     
     if (!group) {
       return res.status(404).json({
@@ -207,9 +207,25 @@ router.get('/:id', auth, async (req, res) => {
       });
     }
     
+    // Add presence status to each member
+    const groupObj = group.toObject();
+    groupObj.members = groupObj.members.map(member => {
+      if (member.user) {
+        const status = computeUserStatus(member.user);
+        return {
+          ...member,
+          user: {
+            ...member.user,
+            status
+          }
+        };
+      }
+      return member;
+    });
+    
     res.json({
       success: true,
-      data: { group }
+      data: { group: groupObj }
     });
   } catch (error) {
     console.error('Get group error:', error);
