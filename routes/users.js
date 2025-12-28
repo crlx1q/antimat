@@ -3,6 +3,33 @@ const router = express.Router();
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 
+// PUT /api/user/push-token - сохранить FCM токен
+router.put('/push-token', auth, async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    if (!fcmToken || typeof fcmToken !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'FCM token is required'
+      });
+    }
+
+    await User.findByIdAndUpdate(
+      req.userId,
+      { fcmToken },
+      { new: true }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Save push token error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка сохранения push токена'
+    });
+  }
+});
+
 // GET /api/user/profile - Получить профиль
 router.get('/profile', auth, async (req, res) => {
   try {
