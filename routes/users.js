@@ -30,6 +30,16 @@ router.put('/push-token', auth, async (req, res) => {
   }
 });
 
+// PUT /api/user/ping - легкий heartbeat для поддержания online статуса
+router.put('/ping', auth, async (req, res) => {
+  try {
+    // lastSeen уже обновлен в auth middleware
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false });
+  }
+});
+
 // PUT /api/user/presence - обновить статус присутствия (recording/online)
 router.put('/presence', auth, async (req, res) => {
   try {
