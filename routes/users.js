@@ -45,11 +45,11 @@ router.put('/ping', auth, async (req, res) => {
       { new: true }
     ).populate('groups', '_id');
 
-    const { sendPresencePush } = require('../utils/fcm');
-    if (user?.groups?.length) {
-      const statusRecording = typeof recording === 'boolean' ? recording : user.isRecording;
+    // Send presence push only if recording flag is explicitly provided (state change)
+    if (typeof recording === 'boolean' && user?.groups?.length) {
+      const { sendPresencePush } = require('../utils/fcm');
       for (const group of user.groups) {
-        await sendPresencePush(group._id.toString(), req.userId, statusRecording);
+        await sendPresencePush(group._id.toString(), req.userId, recording);
       }
     }
 
